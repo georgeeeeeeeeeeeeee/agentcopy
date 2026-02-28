@@ -1,116 +1,56 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import Link from 'next/link';
 
-export default function BuyMoreCredits({ variant = "full" }) {
-  const [loading, setLoading] = useState(false);
-
-  const handleCheckout = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-      });
-      const data = await res.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        console.error("No checkout URL returned");
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      setLoading(false);
-    }
-  };
-
-  if (variant === "inline") {
+// variant="full"   — shown in the chat input area when credits reach 0
+// variant="banner" — shown at the top of the dashboard home screen
+// variant="inline" — small button, e.g. in a nav bar or dropdown
+export default function BuyMoreCredits({ variant = 'full' }) {
+  if (variant === 'inline') {
     return (
-      <button
-        onClick={handleCheckout}
-        disabled={loading}
-        style={{
-          padding: "8px 16px",
-          backgroundColor: "var(--color-accent)",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          fontSize: "14px",
-          fontWeight: "500",
-          cursor: loading ? "not-allowed" : "pointer",
-          opacity: loading ? 0.7 : 1,
-        }}
+      <Link
+        href="/pricing"
+        style={{ padding: '8px 16px', backgroundColor: 'var(--color-accent)', color: 'white', borderRadius: 6, fontSize: 14, fontWeight: 500, textDecoration: 'none', display: 'inline-block' }}
       >
-        {loading ? "..." : "Buy Credits"}
-      </button>
+        Buy Credits
+      </Link>
     );
   }
 
-  // Full variant for the chat area when credits are 0
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "48px 24px",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          width: "64px",
-          height: "64px",
-          borderRadius: "50%",
-          backgroundColor: "var(--color-accent-light)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <span style={{ fontSize: "28px" }}>💳</span>
+  if (variant === 'banner') {
+    return (
+      <div style={{ backgroundColor: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 10, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <p style={{ margin: 0, fontSize: 14, color: '#92400E', fontWeight: 500 }}>
+          You&apos;ve used all your credits. Top up to keep writing.
+        </p>
+        <Link
+          href="/pricing"
+          style={{ padding: '8px 18px', backgroundColor: 'var(--color-accent)', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', display: 'inline-block' }}
+        >
+          Buy credits
+        </Link>
       </div>
-      <h3
-        style={{
-          fontSize: "20px",
-          fontWeight: "600",
-          color: "var(--color-text)",
-          marginBottom: "8px",
-        }}
-      >
-        You've used all your credits
+    );
+  }
+
+  // Full variant — shown in chat area when credits hit 0
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 24px', textAlign: 'center' }}>
+      <div style={{ width: 64, height: 64, borderRadius: '50%', backgroundColor: 'var(--color-accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20, fontSize: 28 }}>
+        💳
+      </div>
+      <h3 style={{ fontSize: 20, fontWeight: 600, color: 'var(--color-text)', marginBottom: 8 }}>
+        You&apos;ve used all your credits
       </h3>
-      <p
-        style={{
-          fontSize: "15px",
-          color: "var(--color-muted)",
-          marginBottom: "24px",
-          maxWidth: "300px",
-        }}
-      >
-        Get 500 more conversations for $99 NZD to continue using AgentCopy.
+      <p style={{ fontSize: 15, color: 'var(--color-muted)', marginBottom: 24, maxWidth: 300 }}>
+        Choose a credit pack to keep using AgentCopy. Packs start from $19 NZD.
       </p>
-      <button
-        onClick={handleCheckout}
-        disabled={loading}
-        style={{
-          padding: "14px 28px",
-          backgroundColor: "var(--color-accent)",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          fontSize: "16px",
-          fontWeight: "600",
-          cursor: loading ? "not-allowed" : "pointer",
-          opacity: loading ? 0.7 : 1,
-          transition: "all 0.2s ease",
-        }}
+      <Link
+        href="/pricing"
+        style={{ padding: '14px 28px', backgroundColor: 'var(--color-accent)', color: 'white', borderRadius: 8, fontSize: 16, fontWeight: 600, textDecoration: 'none', display: 'inline-block', transition: 'opacity 0.15s' }}
       >
-        {loading ? "Redirecting..." : "Buy More Credits — $99"}
-      </button>
+        View pricing
+      </Link>
     </div>
   );
 }
