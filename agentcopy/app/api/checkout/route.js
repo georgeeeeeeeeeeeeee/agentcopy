@@ -45,7 +45,7 @@ export async function POST(request) {
         },
       ],
       mode: 'payment',
-      success_url: `${APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}&min_credits=${user.credits + pack.credits}`,
       cancel_url: `${APP_URL}/pricing`,
       metadata: {
         user_id: userId,

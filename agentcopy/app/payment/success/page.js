@@ -9,6 +9,10 @@ function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
+  // min_credits is the balance the user should reach after the webhook fires.
+  // Passed by the checkout route: current_credits + pack_credits.
+  // Falls back to 1 for any edge case where the param is missing.
+  const minCredits = parseInt(searchParams.get('min_credits') || '1', 10);
 
   useEffect(() => {
     if (!sessionId) {
@@ -27,7 +31,7 @@ function SuccessContent() {
         if (!res.ok) throw new Error('fetch failed');
         const data = await res.json();
 
-        if (data.credits > 0) {
+        if (data.credits >= minCredits) {
           setCredits(data.credits);
           setStatus('success');
           setTimeout(() => router.push('/dashboard'), 3000);
@@ -52,7 +56,7 @@ function SuccessContent() {
     };
 
     checkCredits();
-  }, [sessionId, router]);
+  }, [sessionId, minCredits, router]);
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg)', padding: 20 }}>

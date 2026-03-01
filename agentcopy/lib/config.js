@@ -1,6 +1,11 @@
 // ─── Single source of truth for all configurable values ───────────────────────
 
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+// Resolve the canonical app URL — checked at request time in API routes.
+// Priority: explicit env var → Vercel auto-injected URL → localhost fallback.
+// VERCEL_URL is the deployment hostname without protocol (e.g. "myapp.vercel.app").
+export const APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
 
 // Credit packs — update prices and amounts here; nowhere else.
 // amount_paid_cents is in NZD cents.
