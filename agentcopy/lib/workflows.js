@@ -222,10 +222,93 @@ export const workflows = [
     opener:
       "Let's draft a source of funds request. Tell me:\n\n1. What is the purchase price and how are funds being sourced (mortgage, savings, gift, overseas funds, sale proceeds)?\n2. Is this for a high-value transaction or a flagged risk client?\n3. What supporting documents will you need (bank statements, gift letter, overseas transfer records)?",
   },
+
+  // ─── Tier 4: Commercial Real Estate ──────────────────────────────────────
+  {
+    id: 'cre-information-memorandum',
+    tier: 4,
+    subCategory: 'Marketing',
+    icon: '🏢',
+    title: 'Information Memorandum',
+    desc: 'Draft an investor-grade IM for a commercial property',
+    opener:
+      "Let's build your Information Memorandum. To start, tell me:\n\n1. Property address and type (Office, Retail, Industrial, Mixed-use)?\n2. Floor area (sqm) and title type (Freehold, Leasehold, Unit Title)?\n3. Current tenancy status — is the property tenanted, vacant, or partially tenanted?\n4. Seismic rating (% NBS) if known?\n5. Asking price or yield expectations?",
+  },
+  {
+    id: 'cre-walt-calculator',
+    tier: 4,
+    subCategory: 'Financial Analysis',
+    icon: '📊',
+    title: 'WALT Calculator & Narrative',
+    desc: 'Calculate Weighted Average Lease Term and write the investor story',
+    opener:
+      "I'll calculate the WALT and write the investment narrative. For each tenant, give me:\n\n1. Tenant name (or just 'Tenant A', 'Tenant B' etc.)\n2. Annual rent ($)\n3. Floor area (sqm)\n4. Lease expiry date (or years remaining)\n\nList as many tenants as needed. I'll calculate WALT by both income and area, then explain what it means for the asset.",
+  },
+  {
+    id: 'cre-opex-breakdown',
+    tier: 4,
+    subCategory: 'Financial Analysis',
+    icon: '📑',
+    title: 'Outgoings (OPEX) Table',
+    desc: 'Format outgoings into a Net vs Gross rent schedule',
+    opener:
+      "Let's build your OPEX schedule. Tell me:\n\n1. The gross annual rent ($)\n2. List all outgoings with amounts — e.g. Council rates, insurance, body corporate levies, management fees, maintenance, gardening\n3. Are outgoings fully recoverable from the tenant (Net lease), partially recoverable, or landlord-paid (Gross lease)?\n\nI'll format a clean Net vs Gross table ready for an IM or listing.",
+  },
+  {
+    id: 'cre-agreement-to-lease',
+    tier: 4,
+    subCategory: 'Documents',
+    icon: '📝',
+    title: 'Agreement to Lease',
+    desc: 'Draft commercial heads of terms / Agreement to Lease',
+    opener:
+      "Let's draft your Agreement to Lease. I'll need:\n\n1. Landlord name and tenant name\n2. Premises address and description (floor, area sqm)\n3. Commencement date and term (years)\n4. Rights of Renewal — how many and for how long each?\n5. Initial annual rent ($) and rent review mechanism (CPI, market, fixed %)\n6. Key outgoings — recoverable or gross?\n7. Permitted use\n8. Any landlord fitout contribution or rent-free period?",
+  },
+  {
+    id: 'cre-rent-review',
+    tier: 4,
+    subCategory: 'Documents',
+    icon: '📬',
+    title: 'Rent Review Notice',
+    desc: 'Draft a formal rent review notice (CPI, market, or fixed)',
+    opener:
+      "Let's draft your rent review notice. Tell me:\n\n1. Landlord and tenant names\n2. Property address\n3. Review date and current annual rent ($)\n4. Review mechanism — CPI, market rent, or fixed % uplift?\n5. If CPI: the relevant index period and calculated figure\n6. If market: proposed new rent and any comparable evidence\n7. Is there a ratchet clause (rent cannot decrease)?",
+  },
+  {
+    id: 'cre-make-good-clause',
+    tier: 4,
+    subCategory: 'Documents',
+    icon: '🔨',
+    title: 'Make Good Clause',
+    desc: "Draft reinstatement obligations for a Deed of Lease",
+    opener:
+      "I'll draft your make good clause. Tell me:\n\n1. What fitout or alterations has the tenant installed?\n2. What is the landlord's preference — physical reinstatement, or cash settlement in lieu?\n3. Are there any landlord-installed items the tenant can retain?\n4. What is the condition standard required (e.g. repainted, professionally cleaned, carpets replaced)?\n5. What is the notice period before lease expiry for make good works to begin?",
+  },
+  {
+    id: 'cre-seismic-disclosure',
+    tier: 4,
+    subCategory: 'Disclosure',
+    icon: '⚠️',
+    title: 'Seismic Disclosure Statement',
+    desc: 'Draft a Building Act 2004 earthquake-prone building disclosure',
+    opener:
+      "Let's prepare the seismic disclosure. Tell me:\n\n1. Property address\n2. Current seismic rating (% NBS — National Building Standard)\n3. Has a detailed seismic assessment (DSA) been completed? If so, by whom and when?\n4. Has the council issued a notice under the Building Act 2004?\n5. Are there any planned or completed upgrades?\n6. Is this for an IM, a lease disclosure, or a sale disclosure?",
+  },
+  {
+    id: 'cre-deed-summary',
+    tier: 4,
+    subCategory: 'Analysis',
+    icon: '🔍',
+    title: 'Deed of Lease Summary',
+    desc: 'Extract and summarise key terms from an ADLS Deed of Lease',
+    opener:
+      "Paste the relevant sections of the Deed of Lease and I'll extract and summarise:\n\n- Parties, premises, term, and rights of renewal\n- Rent and review mechanisms (including any ratchet clauses)\n- Outgoings and recovery provisions\n- Assignment and subletting rights\n- Make good / reinstatement obligations\n- Termination events and landlord re-entry rights\n- Insurance obligations\n- Quiet enjoyment covenant\n\nPaste the deed text (or the sections you want analysed) and I'll begin.",
+  },
 ];
 
 export const tiers = [
   { id: 1, label: 'Marketing & Lead Gen' },
   { id: 2, label: 'Professional Correspondence' },
   { id: 3, label: 'Legal & Compliance' },
+  { id: 4, label: 'Commercial Real Estate' },
 ];

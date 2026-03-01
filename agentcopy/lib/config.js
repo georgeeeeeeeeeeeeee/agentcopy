@@ -41,9 +41,18 @@ export const VALID_WORKFLOW_IDS = new Set([
   'disclosure-healthy-homes',
   'aml-cdd-explanation',
   'aml-source-of-funds',
+  // Tier 4 — Commercial Real Estate
+  'cre-information-memorandum',
+  'cre-walt-calculator',
+  'cre-opex-breakdown',
+  'cre-agreement-to-lease',
+  'cre-rent-review',
+  'cre-make-good-clause',
+  'cre-seismic-disclosure',
+  'cre-deed-summary',
 ]);
 
-// Tier 3 workflow IDs — cost 2 credits each and require tone handling
+// Tier 3 workflow IDs — 2 credits, residential legal & compliance
 export const TIER3_WORKFLOW_IDS = new Set([
   'sp-finance-clause',
   'sp-building-clause',
@@ -58,8 +67,27 @@ export const TIER3_WORKFLOW_IDS = new Set([
   'aml-source-of-funds',
 ]);
 
-// Credit cost for Tier 3 workflows
+// Tier 4 workflow IDs — 2 credits, commercial real estate
+export const TIER4_WORKFLOW_IDS = new Set([
+  'cre-information-memorandum',
+  'cre-walt-calculator',
+  'cre-opex-breakdown',
+  'cre-agreement-to-lease',
+  'cre-rent-review',
+  'cre-make-good-clause',
+  'cre-seismic-disclosure',
+  'cre-deed-summary',
+]);
+
 export const TIER3_CREDIT_COST = 2;
+export const TIER4_CREDIT_COST = 2;
+
+// Returns the credit cost for any workflow ID — single source of truth for the route
+export function getWorkflowCreditCost(workflowId) {
+  if (TIER4_WORKFLOW_IDS.has(workflowId)) return TIER4_CREDIT_COST;
+  if (TIER3_WORKFLOW_IDS.has(workflowId)) return TIER3_CREDIT_COST;
+  return 1;
+}
 
 // Input limits
 export const MAX_MESSAGE_LENGTH = 5000;  // characters per message
@@ -76,4 +104,5 @@ export const RESET_TOKEN_EXPIRY_HOURS = 1;
 
 // AI model
 export const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
-export const CLAUDE_MAX_TOKENS = 2048;
+// 4096 prevents truncation of long-form commercial documents (IMs, WALT analyses)
+export const CLAUDE_MAX_TOKENS = 4096;

@@ -5,8 +5,7 @@ import { getPrompt } from '@/lib/prompts';
 import { checkRateLimit } from '@/lib/ratelimit';
 import {
   VALID_WORKFLOW_IDS,
-  TIER3_WORKFLOW_IDS,
-  TIER3_CREDIT_COST,
+  getWorkflowCreditCost,
   MAX_MESSAGE_LENGTH,
   MAX_MESSAGES_PER_REQUEST,
   CLAUDE_MODEL,
@@ -68,7 +67,7 @@ export async function POST(request) {
   }
 
   // 4. Determine credit cost and pre-flight credit check
-  const creditCost = TIER3_WORKFLOW_IDS.has(workflowId) ? TIER3_CREDIT_COST : 1;
+  const creditCost = getWorkflowCreditCost(workflowId);
   const user = await getUserById(userId);
   if (!user || user.credits <= 0) {
     return Response.json(
@@ -80,7 +79,7 @@ export async function POST(request) {
     return Response.json(
       {
         error: 'INSUFFICIENT_CREDITS',
-        message: `Legal & Compliance workflows cost 2 credits. You have ${user.credits} credit${user.credits === 1 ? '' : 's'} remaining — please top up to continue.`,
+        message: `This workflow costs ${creditCost} credits. You have ${user.credits} credit${user.credits === 1 ? '' : 's'} remaining — please top up to continue.`,
       },
       { status: 402 }
     );

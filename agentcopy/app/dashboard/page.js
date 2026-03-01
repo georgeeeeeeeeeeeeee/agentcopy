@@ -205,6 +205,7 @@ export default function Dashboard() {
     : '?';
 
   const isTier3 = activeWorkflow?.tier === 3;
+  const isTier4 = activeWorkflow?.tier === 4;
 
   // ─── Chat Screen ───
   if (screen === 'chat') {
@@ -219,6 +220,13 @@ export default function Dashboard() {
             <div style={{ fontSize: 16, fontWeight: 600 }}>{activeWorkflow?.icon} {activeWorkflow?.title}</div>
             <div style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: 1 }}>{activeWorkflow?.desc}</div>
           </div>
+
+          {/* Commercial badge — Tier 4 only */}
+          {isTier4 && (
+            <div style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 5, background: '#DBEAFE', color: '#1D4ED8', flexShrink: 0 }}>
+              Commercial · 2 credits
+            </div>
+          )}
 
           {/* Tone toggle — Tier 3 only */}
           {isTier3 && (
@@ -351,6 +359,11 @@ export default function Dashboard() {
                     2 credits
                   </div>
                 )}
+                {tier.id === 4 && (
+                  <div style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: '#DBEAFE', color: '#1D4ED8', letterSpacing: 0.3 }}>
+                    2 credits
+                  </div>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
                 {tierWorkflows.map((workflow) => (
@@ -377,6 +390,11 @@ export default function Dashboard() {
 function WorkflowCard({ workflow, onClick }) {
   const [hovered, setHovered] = useState(false);
   const isTier3 = workflow.tier === 3;
+  const isTier4 = workflow.tier === 4;
+
+  let borderLeft = `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`;
+  if (isTier3) borderLeft = `4px solid ${hovered ? 'var(--color-accent)' : '#D97706'}`;
+  if (isTier4) borderLeft = `4px solid ${hovered ? 'var(--color-accent)' : '#3B82F6'}`;
 
   return (
     <button
@@ -386,7 +404,7 @@ function WorkflowCard({ workflow, onClick }) {
       style={{
         background: hovered ? 'var(--color-accent-light)' : 'var(--color-card)',
         border: `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`,
-        borderLeft: isTier3 ? `4px solid ${hovered ? 'var(--color-accent)' : '#D97706'}` : `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`,
+        borderLeft,
         borderRadius: 14,
         padding: '20px 18px',
         cursor: 'pointer',
