@@ -5,6 +5,8 @@ import { getPrompt } from '@/lib/prompts';
 import { checkRateLimit } from '@/lib/ratelimit';
 import {
   VALID_WORKFLOW_IDS,
+  TIER3_WORKFLOW_IDS,
+  TIER3_CREDIT_COST,
   MAX_MESSAGE_LENGTH,
   MAX_MESSAGES_PER_REQUEST,
   CLAUDE_MODEL,
@@ -35,11 +37,14 @@ export async function POST(request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { workflowId, messages } = body;
+  const { workflowId, messages, tone: rawTone } = body;
 
   if (!workflowId || !VALID_WORKFLOW_IDS.has(workflowId)) {
     return Response.json({ error: 'Invalid workflow' }, { status: 400 });
   }
+
+  // Validate tone — only 'approachable' or 'formal' are accepted
+  const tone = rawTone === 'formal' ? 'formal' : 'approachable';
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return Response.json({ error: 'Messages are required' }, { status: 400 });
@@ -62,7 +67,8 @@ export async function POST(request) {
     sanitisedMessages.push({ role: msg.role, content: msg.content.trim() });
   }
 
-  // 4. Check credits (pre-flight, non-atomic — atomic deduction happens below)
+  // 4. Determine credit cost and pre-flight credit check
+  const creditCost = TIER3_WORKFLOW_IDS.has(workflowId) ? TIER3_CREDIT_COST : 1;
   const user = await getUserById(userId);
   if (!user || user.credits <= 0) {
     return Response.json(
@@ -70,9 +76,18 @@ export async function POST(request) {
       { status: 402 }
     );
   }
+  if (user.credits < creditCost) {
+    return Response.json(
+      {
+        error: 'INSUFFICIENT_CREDITS',
+        message: `Legal & Compliance workflows cost 2 credits. You have ${user.credits} credit${user.credits === 1 ? '' : 's'} remaining — please top up to continue.`,
+      },
+      { status: 402 }
+    );
+  }
 
   // 5. Call Claude — deduct ONLY on success
-  const systemPrompt = getPrompt(workflowId);
+  const systemPrompt = getPrompt(workflowId, tone);
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   const encoder = new TextEncoder();
@@ -98,8 +113,8 @@ export async function POST(request) {
           }
         }
 
-        // 6. Deduct credit atomically — only after successful Claude response
-        const remainingCredits = await deductCredit(userId);
+        // 6. Deduct credits atomically — only after successful Claude response
+        const remainingCredits = await deductCredit(userId, creditCost);
 
         if (remainingCredits === null) {
           // Edge case: credits hit 0 between check and deduction — safe to ignore,

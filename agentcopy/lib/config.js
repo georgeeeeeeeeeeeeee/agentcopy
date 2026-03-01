@@ -15,15 +15,51 @@ export const VALID_CREDIT_AMOUNTS = new Set(CREDIT_PACKS.map(p => p.credits));
 
 // Valid workflow IDs — used to whitelist chat requests
 export const VALID_WORKFLOW_IDS = new Set([
+  // Tier 1 — Marketing & Lead Gen
   'trademe-listing',
   'realestate-listing',
+  'social-post',
+  'video-tour-script',
+  // Tier 2 — Professional Correspondence
   'vendor-update',
   'open-home-followup',
-  'social-post',
   'price-reduction',
   'appraisal-letter',
   'buyer-email',
+  'multi-offer-notification',
+  'rejection-email',
+  'acceptance-email',
+  // Tier 3 — Legal & Compliance
+  'sp-finance-clause',
+  'sp-building-clause',
+  'sp-solicitors-approval',
+  'sp-sunset-clause',
+  'sp-further-terms',
+  'disclosure-material-defects',
+  'disclosure-as-is',
+  'disclosure-unit-title',
+  'disclosure-healthy-homes',
+  'aml-cdd-explanation',
+  'aml-source-of-funds',
 ]);
+
+// Tier 3 workflow IDs — cost 2 credits each and require tone handling
+export const TIER3_WORKFLOW_IDS = new Set([
+  'sp-finance-clause',
+  'sp-building-clause',
+  'sp-solicitors-approval',
+  'sp-sunset-clause',
+  'sp-further-terms',
+  'disclosure-material-defects',
+  'disclosure-as-is',
+  'disclosure-unit-title',
+  'disclosure-healthy-homes',
+  'aml-cdd-explanation',
+  'aml-source-of-funds',
+]);
+
+// Credit cost for Tier 3 workflows
+export const TIER3_CREDIT_COST = 2;
 
 // Input limits
 export const MAX_MESSAGE_LENGTH = 5000;  // characters per message

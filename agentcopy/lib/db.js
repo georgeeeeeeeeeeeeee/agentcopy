@@ -40,18 +40,18 @@ export async function updatePassword(userId, passwordHash) {
 
 // ─── Credits — atomic deduction (returns new balance or null if insufficient) ──
 
-export async function deductCredit(userId) {
+export async function deductCredit(userId, amount = 1) {
   // Uses CTE to atomically check-and-deduct in one round-trip
   const rows = await sql`
     WITH updated AS (
       UPDATE users
-      SET credits = credits - 1, updated_at = now()
-      WHERE id = ${userId} AND credits > 0
+      SET credits = credits - ${amount}, updated_at = now()
+      WHERE id = ${userId} AND credits >= ${amount}
       RETURNING credits
     )
     SELECT credits FROM updated
   `;
-  return rows[0]?.credits ?? null;  // null = had no credits
+  return rows[0]?.credits ?? null;  // null = had insufficient credits
 }
 
 export async function addCredits(userId, amount, stripeSessionId, amountPaidCents) {

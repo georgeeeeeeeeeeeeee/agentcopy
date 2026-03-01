@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useRouter } from 'next/navigation';
-import { workflows, categories } from '@/lib/workflows';
+import { workflows, tiers } from '@/lib/workflows';
 import BuyMoreCredits from '@/components/BuyMoreCredits';
 
 export default function Dashboard() {
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [userName, setUserName] = useState('');
   const [credits, setCredits] = useState(null);
   const [creditsLoading, setCreditsLoading] = useState(true);
+  const [tone, setTone] = useState('approachable');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const router = useRouter();
@@ -52,6 +53,7 @@ export default function Dashboard() {
   const openWorkflow = (workflow) => {
     setActiveWorkflow(workflow);
     setMessages([{ role: 'assistant', content: workflow.opener }]);
+    setTone('approachable');
     setScreen('chat');
   };
 
@@ -59,6 +61,7 @@ export default function Dashboard() {
     setScreen('home');
     setMessages([]);
     setActiveWorkflow(null);
+    setTone('approachable');
   };
 
   const handleLogout = async () => {
@@ -96,6 +99,7 @@ export default function Dashboard() {
             role: m.role,
             content: m.content,
           })),
+          tone,
         }),
       });
 
@@ -104,6 +108,19 @@ export default function Dashboard() {
         if (data.error === 'NO_CREDITS') {
           setCredits(0);
           setMessages((prev) => prev.slice(0, -1));
+          setIsStreaming(false);
+          return;
+        }
+        if (data.error === 'INSUFFICIENT_CREDITS') {
+          // User has credits but not enough for Tier 3 — show inline error, don't zero the balance
+          setMessages((prev) => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            if (lastMsg.role === 'assistant') {
+              lastMsg.content = data.message;
+            }
+            return updated;
+          });
           setIsStreaming(false);
           return;
         }
@@ -187,6 +204,8 @@ export default function Dashboard() {
     ? userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
 
+  const isTier3 = activeWorkflow?.tier === 3;
+
   // ─── Chat Screen ───
   if (screen === 'chat') {
     return (
@@ -200,8 +219,27 @@ export default function Dashboard() {
             <div style={{ fontSize: 16, fontWeight: 600 }}>{activeWorkflow?.icon} {activeWorkflow?.title}</div>
             <div style={{ fontSize: 13, color: 'var(--color-muted)', marginTop: 1 }}>{activeWorkflow?.desc}</div>
           </div>
+
+          {/* Tone toggle — Tier 3 only */}
+          {isTier3 && (
+            <div style={{ display: 'flex', borderRadius: 8, overflow: 'hidden', border: '1.5px solid var(--color-border)', flexShrink: 0 }}>
+              <button
+                onClick={() => setTone('approachable')}
+                style={{ padding: '5px 12px', fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-body)', border: 'none', cursor: 'pointer', background: tone === 'approachable' ? 'var(--color-accent)' : 'transparent', color: tone === 'approachable' ? '#FFFFFF' : 'var(--color-muted)', transition: 'all 0.15s ease' }}
+              >
+                Approachable
+              </button>
+              <button
+                onClick={() => setTone('formal')}
+                style={{ padding: '5px 12px', fontSize: 13, fontWeight: 500, fontFamily: 'var(--font-body)', border: 'none', borderLeft: '1px solid var(--color-border)', cursor: 'pointer', background: tone === 'formal' ? 'var(--color-accent)' : 'transparent', color: tone === 'formal' ? '#FFFFFF' : 'var(--color-muted)', transition: 'all 0.15s ease' }}
+              >
+                Formal
+              </button>
+            </div>
+          )}
+
           {!creditsLoading && credits !== null && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', backgroundColor: credits > 0 ? 'var(--color-accent-light)' : '#FEF3C7', borderRadius: 6, fontSize: 14, color: credits > 0 ? 'var(--color-accent)' : '#92400E', fontWeight: 500 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', backgroundColor: credits > 0 ? 'var(--color-accent-light)' : '#FEF3C7', borderRadius: 6, fontSize: 14, color: credits > 0 ? 'var(--color-accent)' : '#92400E', fontWeight: 500, flexShrink: 0 }}>
               {credits} credits
             </div>
           )}
@@ -298,22 +336,34 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* Workflow Cards */}
+      {/* Workflow Cards — grouped by tier */}
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {categories.map((cat) => (
-          <div key={cat} style={{ marginBottom: 32 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--color-muted)', marginBottom: 12, paddingLeft: 2 }}>
-              {cat}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
-              {workflows
-                .filter((w) => w.category === cat)
-                .map((workflow) => (
-                  <WorkflowCard key={workflow.id} workflow={workflow} onClick={() => openWorkflow(workflow)} />
+        {tiers.map((tier) => {
+          const tierWorkflows = workflows.filter((w) => w.tier === tier.id);
+          return (
+            <div key={tier.id} style={{ marginBottom: 36 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingLeft: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--color-muted)' }}>
+                  {tier.label}
+                </div>
+                {tier.id === 3 && (
+                  <div style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', letterSpacing: 0.3 }}>
+                    2 credits
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
+                {tierWorkflows.map((workflow) => (
+                  <WorkflowCard
+                    key={workflow.id}
+                    workflow={workflow}
+                    onClick={() => openWorkflow(workflow)}
+                  />
                 ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer */}
@@ -326,13 +376,29 @@ export default function Dashboard() {
 
 function WorkflowCard({ workflow, onClick }) {
   const [hovered, setHovered] = useState(false);
+  const isTier3 = workflow.tier === 3;
 
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      style={{ background: hovered ? 'var(--color-accent-light)' : 'var(--color-card)', border: `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`, borderRadius: 14, padding: '20px 18px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', display: 'flex', flexDirection: 'column', gap: 8, transform: hovered ? 'translateY(-2px)' : 'translateY(0)', boxShadow: hovered ? '0 4px 12px rgba(45,90,61,0.08)' : 'none', fontFamily: 'var(--font-body)' }}
+      style={{
+        background: hovered ? 'var(--color-accent-light)' : 'var(--color-card)',
+        border: `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`,
+        borderLeft: isTier3 ? `4px solid ${hovered ? 'var(--color-accent)' : '#D97706'}` : `1.5px solid ${hovered ? 'var(--color-accent)' : 'var(--color-border)'}`,
+        borderRadius: 14,
+        padding: '20px 18px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered ? '0 4px 12px rgba(45,90,61,0.08)' : 'none',
+        fontFamily: 'var(--font-body)',
+      }}
     >
       <span style={{ fontSize: 24 }}>{workflow.icon}</span>
       <span style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.3 }}>{workflow.title}</span>
