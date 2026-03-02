@@ -77,10 +77,19 @@ export async function addCredits(userId, amount, stripeSessionId, amountPaidCent
 
 // ─── Generations ──────────────────────────────────────────────────────────────
 
-export async function saveGeneration(userId, workflowId, messages, outputText) {
+// track: 'residential' | 'commercial' | null (null for chat-based workflows)
+// formData: raw wizard form fields as object | null (null for chat-based workflows)
+export async function saveGeneration(userId, workflowId, messages, outputText, { track = null, formData = null } = {}) {
   const rows = await sql`
-    INSERT INTO generations (user_id, workflow_id, messages, output_text)
-    VALUES (${userId}, ${workflowId}, ${JSON.stringify(messages)}, ${outputText})
+    INSERT INTO generations (user_id, workflow_id, messages, output_text, track, form_data)
+    VALUES (
+      ${userId},
+      ${workflowId},
+      ${JSON.stringify(messages)},
+      ${outputText},
+      ${track},
+      ${formData ? JSON.stringify(formData) : null}
+    )
     RETURNING id, created_at
   `;
   return rows[0];

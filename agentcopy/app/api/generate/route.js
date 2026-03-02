@@ -53,17 +53,18 @@ export async function POST(request) {
     }
   }
 
-  // 4. Credit pre-flight
+  // 4. Credit pre-flight — cost is always 1 credit for generation
+  const GENERATION_COST = 1;
   const user = await getUserById(userId);
-  if (!user || user.credits <= 0) {
+  if (!user || user.credits === 0) {
     return Response.json(
       { error: 'NO_CREDITS', message: 'No credits remaining. Please purchase more to continue.' },
       { status: 402 }
     );
   }
-  if (user.credits < 1) {
+  if (user.credits < GENERATION_COST) {
     return Response.json(
-      { error: 'INSUFFICIENT_CREDITS', message: 'This requires 1 credit. Please top up to continue.' },
+      { error: 'INSUFFICIENT_CREDITS', message: `Generating a listing costs ${GENERATION_COST} credit. You have ${user.credits} — please top up to continue.` },
       { status: 402 }
     );
   }
@@ -89,15 +90,19 @@ export async function POST(request) {
     return Response.json({ error: 'Failed to generate listing. Please try again.' }, { status: 502 });
   }
 
-  // 7. Deduct credit after success
-  const remainingCredits = await deductCredit(userId, 1);
+  // 7. Deduct credit after success (atomic — returns null if race condition depleted balance)
+  const remainingCredits = await deductCredit(userId, GENERATION_COST);
 
-  // 8. Save generation (fire-and-forget)
+  // 8. Save generation (fire-and-forget — never blocks the response)
   const wizardWorkflowId = `wizard-${track}`;
   if (outputText) {
-    saveGeneration(userId, wizardWorkflowId, [{ role: 'user', content: userPrompt }], outputText).catch(
-      (err) => console.error('Failed to save generation:', err)
-    );
+    saveGeneration(
+      userId,
+      wizardWorkflowId,
+      [{ role: 'user', content: userPrompt }],
+      outputText,
+      { track, formData }
+    ).catch((err) => console.error('Failed to save generation:', err));
   }
 
   return Response.json({
