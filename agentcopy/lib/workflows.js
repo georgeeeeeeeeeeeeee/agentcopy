@@ -307,8 +307,14 @@ export const workflows = [
 ];
 
 export const tiers = [
-  { id: 1, label: 'Marketing & Lead Gen' },
-  { id: 2, label: 'Professional Correspondence' },
-  { id: 3, label: 'Legal & Compliance' },
-  { id: 4, label: 'Commercial Real Estate' },
+  { id: 1, label: 'Marketing & Residential Sales',
+    subtitle: 'Narrative-led listings, social posts, and video scripts that put the lifestyle first.' },
+  { id: 2, label: 'Professional Correspondence',
+    subtitle: 'High-stakes vendor updates, buyer emails, and database nurture — authority with warmth.' },
+  { id: 3, label: 'Legal & Compliance',
+    subtitle: 'S&P clauses, disclosure statements, and AML documentation in plain English.',
+    creditNote: '2 credits' },
+  { id: 4, label: 'Commercial Real Estate',
+    subtitle: 'IMs, WALT analysis, leases, and yield-first copy for commercial professionals.',
+    creditNote: '2 credits' },
 ];

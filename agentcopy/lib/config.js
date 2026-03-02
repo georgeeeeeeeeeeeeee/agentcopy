@@ -86,6 +86,7 @@ export const TIER4_WORKFLOW_IDS = new Set([
 
 export const TIER3_CREDIT_COST = 2;
 export const TIER4_CREDIT_COST = 2;
+export const REFINE_CREDIT_COST = 1;
 
 // Returns the credit cost for any workflow ID — single source of truth for the route
 export function getWorkflowCreditCost(workflowId) {

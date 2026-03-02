@@ -6,8 +6,17 @@ import { useRouter } from 'next/navigation';
 import { workflows, tiers } from '@/lib/workflows';
 import BuyMoreCredits from '@/components/BuyMoreCredits';
 
+// Accent colours per pillar (T1→green, T2→neutral, T3→amber, T4→blue)
+const PILLAR_ACCENTS = {
+  1: { border: '#16A34A', bg: '#DCFCE7', text: '#15803D' },
+  2: { border: 'var(--color-accent)', bg: 'var(--color-accent-light)', text: 'var(--color-accent)' },
+  3: { border: '#D97706', bg: '#FEF3C7', text: '#92400E' },
+  4: { border: '#3B82F6', bg: '#DBEAFE', text: '#1D4ED8' },
+};
+
 export default function Dashboard() {
-  const [screen, setScreen] = useState('home'); // home | chat
+  const [screen, setScreen] = useState('home'); // home | pillar | chat
+  const [activePillar, setActivePillar] = useState(null);
   const [activeWorkflow, setActiveWorkflow] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -50,6 +59,13 @@ export default function Dashboard() {
     }
   }, [screen]);
 
+  const selectPillar = (tier) => {
+    if (tier.id === 1) { router.push('/dashboard/generate?track=residential'); return; }
+    if (tier.id === 4) { router.push('/dashboard/generate?track=commercial'); return; }
+    setActivePillar(tier);
+    setScreen('pillar');
+  };
+
   const openWorkflow = (workflow) => {
     setActiveWorkflow(workflow);
     setMessages([{ role: 'assistant', content: workflow.opener }]);
@@ -57,11 +73,16 @@ export default function Dashboard() {
     setScreen('chat');
   };
 
-  const goHome = () => {
-    setScreen('home');
-    setMessages([]);
-    setActiveWorkflow(null);
-    setTone('approachable');
+  const goBack = () => {
+    if (screen === 'chat') {
+      setScreen('pillar');
+      setMessages([]);
+      setActiveWorkflow(null);
+      setTone('approachable');
+    } else if (screen === 'pillar') {
+      setScreen('home');
+      setActivePillar(null);
+    }
   };
 
   const handleLogout = async () => {
@@ -213,7 +234,7 @@ export default function Dashboard() {
       <div style={{ background: 'var(--color-chat-bg)', height: '100vh', display: 'flex', flexDirection: 'column' }}>
         {/* Header */}
         <div style={{ background: 'var(--color-card)', borderBottom: '1px solid var(--color-border)', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
-          <button onClick={goHome} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--color-muted)', padding: '4px 8px', borderRadius: 6 }}>
+          <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--color-muted)', padding: '4px 8px', borderRadius: 6 }}>
             ←
           </button>
           <div style={{ flex: 1 }}>
@@ -302,6 +323,81 @@ export default function Dashboard() {
     );
   }
 
+  // ─── Pillar Screen ───
+  if (screen === 'pillar') {
+    const pillarWorkflows = workflows.filter((w) => w.tier === activePillar.id);
+    return (
+      <div style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '0 24px 60px' }}>
+        {/* Top bar */}
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button onClick={goBack} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: 'var(--color-muted)', padding: '4px 8px', borderRadius: 6, marginRight: 4 }}>
+              ←
+            </button>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16, fontWeight: 600 }}>A</div>
+            <span style={{ fontSize: 16, fontWeight: 600, letterSpacing: -0.3 }}>AgentCopy</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {!creditsLoading && credits !== null && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', backgroundColor: credits > 0 ? 'var(--color-accent-light)' : '#FEF3C7', borderRadius: 6, fontSize: 14, color: credits > 0 ? 'var(--color-accent)' : '#92400E', fontWeight: 500 }}>
+                {credits} credits
+              </div>
+            )}
+            <button onClick={handleLogout} style={{ background: 'none', border: 'none', color: 'var(--color-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+              Sign out
+            </button>
+            <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--color-accent-light)', color: 'var(--color-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600 }}>
+              {initials}
+            </div>
+          </div>
+        </div>
+
+        {/* Pillar header */}
+        <div style={{ maxWidth: 720, margin: '0 auto', padding: '16px 0 32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 400, lineHeight: 1.15, margin: 0, letterSpacing: -0.3 }}>
+              {activePillar.label}
+            </h1>
+            {activePillar.creditNote && (
+              <div style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: PILLAR_ACCENTS[activePillar.id].bg, color: PILLAR_ACCENTS[activePillar.id].text, letterSpacing: 0.3, flexShrink: 0, marginTop: 4 }}>
+                {activePillar.creditNote}
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: 15, color: 'var(--color-muted)', lineHeight: 1.5, margin: 0 }}>
+            {activePillar.subtitle}
+          </p>
+        </div>
+
+        {/* 0-credit banner */}
+        {!creditsLoading && credits === 0 && (
+          <div style={{ maxWidth: 720, margin: '0 auto 24px' }}>
+            <BuyMoreCredits variant="banner" />
+          </div>
+        )}
+
+        {/* Workflow cards */}
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
+            {pillarWorkflows.map((workflow) => (
+              <WorkflowCard
+                key={workflow.id}
+                workflow={workflow}
+                onClick={() => openWorkflow(workflow)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ maxWidth: 720, margin: '40px auto 0', textAlign: 'center', fontSize: 13, color: 'var(--color-muted)' }}>
+          Built for New Zealand real estate agents · Powered by AI
+        </div>
+      </div>
+    );
+  }
+
   // ─── Home Screen ───
   return (
     <div style={{ background: 'var(--color-bg)', minHeight: '100vh', padding: '0 24px 60px' }}>
@@ -340,43 +436,17 @@ export default function Dashboard() {
           What are you working on?
         </h1>
         <p style={{ fontSize: 16, color: 'var(--color-muted)', lineHeight: 1.5, margin: 0 }}>
-          Choose a task and your AI assistant will walk you through it step by step.
+          Choose a category and your AI assistant will walk you through it step by step.
         </p>
       </div>
 
-      {/* Workflow Cards — grouped by tier */}
+      {/* Pillar Cards — 2×2 grid */}
       <div style={{ maxWidth: 720, margin: '0 auto' }}>
-        {tiers.map((tier) => {
-          const tierWorkflows = workflows.filter((w) => w.tier === tier.id);
-          return (
-            <div key={tier.id} style={{ marginBottom: 36 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, paddingLeft: 2 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1.2, color: 'var(--color-muted)' }}>
-                  {tier.label}
-                </div>
-                {tier.id === 3 && (
-                  <div style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: '#FEF3C7', color: '#92400E', letterSpacing: 0.3 }}>
-                    2 credits
-                  </div>
-                )}
-                {tier.id === 4 && (
-                  <div style={{ fontSize: 11, fontWeight: 600, padding: '2px 7px', borderRadius: 4, background: '#DBEAFE', color: '#1D4ED8', letterSpacing: 0.3 }}>
-                    2 credits
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
-                {tierWorkflows.map((workflow) => (
-                  <WorkflowCard
-                    key={workflow.id}
-                    workflow={workflow}
-                    onClick={() => openWorkflow(workflow)}
-                  />
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+          {tiers.map((tier) => (
+            <PillarCard key={tier.id} tier={tier} onClick={() => selectPillar(tier)} />
+          ))}
+        </div>
       </div>
 
       {/* Footer */}
@@ -384,6 +454,51 @@ export default function Dashboard() {
         Built for New Zealand real estate agents · Powered by AI
       </div>
     </div>
+  );
+}
+
+function PillarCard({ tier, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  const accent = PILLAR_ACCENTS[tier.id];
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: hovered ? accent.bg : 'var(--color-card)',
+        border: `1.5px solid ${hovered ? accent.border : 'var(--color-border)'}`,
+        borderLeft: `4px solid ${hovered ? accent.border : accent.border}`,
+        borderRadius: 14,
+        padding: '24px 22px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        transition: 'all 0.2s ease',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        transform: hovered ? 'translateY(-2px)' : 'translateY(0)',
+        boxShadow: hovered ? '0 4px 16px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.04)',
+        fontFamily: 'var(--font-body)',
+        minHeight: 130,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+        <span style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.3, color: 'var(--color-text)' }}>{tier.label}</span>
+        {tier.creditNote && (
+          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 4, background: accent.bg, color: accent.text, border: `1px solid ${accent.border}`, flexShrink: 0, whiteSpace: 'nowrap' }}>
+            {tier.creditNote}
+          </span>
+        )}
+      </div>
+      {tier.subtitle && (
+        <span style={{ fontSize: 13, color: 'var(--color-muted)', lineHeight: 1.5 }}>{tier.subtitle}</span>
+      )}
+      <span style={{ fontSize: 13, color: accent.text, fontWeight: 500, marginTop: 'auto' }}>
+        {workflows.filter((w) => w.tier === tier.id).length} tools →
+      </span>
+    </button>
   );
 }
 
