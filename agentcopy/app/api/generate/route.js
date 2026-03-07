@@ -4,10 +4,27 @@ import { getUserById, deductCredit, saveGeneration } from '@/lib/db';
 import { getWizardSystemPrompt } from '@/lib/prompts';
 import { buildGenerationPrompt } from '@/lib/wizard-questions';
 import { checkRateLimit } from '@/lib/ratelimit';
-import { CLAUDE_MODEL, CLAUDE_MAX_TOKENS } from '@/lib/config';
+import { pushToRealestateNZ } from '@/lib/syndication';
+import {
+  CLAUDE_MODEL,
+  CLAUDE_MAX_TOKENS,
+  OUTPUT_CHANNEL_BASE_CREDIT,
+  OUTPUT_CHANNEL_EXTRA_CREDIT,
+} from '@/lib/config';
 
 const VALID_TRACKS = new Set(['residential', 'commercial']);
 const MAX_FIELD_LENGTH = 2000;
+
+/**
+ * Calculate credit cost based on selected output channels.
+ * 1.0 credit for the first channel, +0.5 for each additional.
+ */
+function calcChannelCost(formData) {
+  const channels = Array.isArray(formData?.outputChannels) ? formData.outputChannels : [];
+  const count = Math.max(channels.length, 1);
+  if (count === 1) return OUTPUT_CHANNEL_BASE_CREDIT;
+  return OUTPUT_CHANNEL_BASE_CREDIT + (count - 1) * OUTPUT_CHANNEL_EXTRA_CREDIT;
+}
 
 export async function POST(request) {
   // 1. Auth
@@ -43,7 +60,7 @@ export async function POST(request) {
     return Response.json({ error: 'formData is required' }, { status: 400 });
   }
 
-  // Validate field lengths
+  // Validate field lengths (scalar fields only; address objects and arrays are handled separately)
   for (const [key, value] of Object.entries(formData)) {
     if (typeof value === 'string' && value.length > MAX_FIELD_LENGTH) {
       return Response.json(
@@ -53,8 +70,17 @@ export async function POST(request) {
     }
   }
 
-  // 4. Credit pre-flight — cost is always 1 credit for generation
-  const GENERATION_COST = 1;
+  // Validate outputChannels
+  const outputChannels = Array.isArray(formData.outputChannels) ? formData.outputChannels : [];
+  const VALID_CHANNELS = new Set(['Open2view', 'Company Website', 'Newspaper']);
+  for (const ch of outputChannels) {
+    if (!VALID_CHANNELS.has(ch)) {
+      return Response.json({ error: `Invalid output channel: "${ch}"` }, { status: 400 });
+    }
+  }
+
+  // 4. Credit pre-flight
+  const GENERATION_COST = calcChannelCost(formData);
   const user = await getUserById(userId);
   if (!user || user.credits === 0) {
     return Response.json(
@@ -62,9 +88,12 @@ export async function POST(request) {
       { status: 402 }
     );
   }
-  if (user.credits < GENERATION_COST) {
+  if (Number(user.credits) < GENERATION_COST) {
     return Response.json(
-      { error: 'INSUFFICIENT_CREDITS', message: `Generating a listing costs ${GENERATION_COST} credit. You have ${user.credits} — please top up to continue.` },
+      {
+        error: 'INSUFFICIENT_CREDITS',
+        message: `This generation costs ${GENERATION_COST} credit${GENERATION_COST !== 1 ? 's' : ''}. You have ${user.credits} — please top up to continue.`,
+      },
       { status: 402 }
     );
   }
@@ -90,23 +119,37 @@ export async function POST(request) {
     return Response.json({ error: 'Failed to generate listing. Please try again.' }, { status: 502 });
   }
 
-  // 7. Deduct credit after success (atomic — returns null if race condition depleted balance)
+  // 7. Deduct credits after success
   const remainingCredits = await deductCredit(userId, GENERATION_COST);
 
-  // 8. Save generation (fire-and-forget — never blocks the response)
+  // 8. Save generation (fire-and-forget)
   const wizardWorkflowId = `wizard-${track}`;
+  let savedGeneration = null;
   if (outputText) {
-    saveGeneration(
+    savedGeneration = await saveGeneration(
       userId,
       wizardWorkflowId,
       [{ role: 'user', content: userPrompt }],
       outputText,
       { track, formData }
-    ).catch((err) => console.error('Failed to save generation:', err));
+    ).catch((err) => {
+      console.error('Failed to save generation:', err);
+      return null;
+    });
+  }
+
+  // 9. Syndication: push to Realestate.co.nz if "Company Website" channel selected (fire-and-forget)
+  if (outputChannels.includes('Company Website') && outputText) {
+    pushToRealestateNZ({
+      formData,
+      outputText,
+      listingId: savedGeneration?.id ?? `tmp-${Date.now()}`,
+    });
   }
 
   return Response.json({
     text: outputText,
     credits: remainingCredits ?? 0,
+    channelCost: GENERATION_COST,
   });
 }

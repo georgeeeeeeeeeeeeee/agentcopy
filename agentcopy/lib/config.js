@@ -95,6 +95,15 @@ export function getWorkflowCreditCost(workflowId) {
   return 1;
 }
 
+// Output channel credits
+// First channel costs 1.0 credit; each additional costs 0.5 credits.
+export const OUTPUT_CHANNEL_BASE_CREDIT = 1.0;
+export const OUTPUT_CHANNEL_EXTRA_CREDIT = 0.5;
+
+// Newspaper classified ad — strict character limit applied to the heroFeatures
+// description field when the Newspaper output channel is selected.
+export const NEWSPAPER_CHAR_LIMIT = 350;
+
 // Input limits
 export const MAX_MESSAGE_LENGTH = 5000;  // characters per message
 export const MAX_MESSAGES_PER_REQUEST = 40;
